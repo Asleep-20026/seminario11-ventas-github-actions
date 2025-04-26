@@ -16,7 +16,8 @@
     "express": "^5.1.0",
     "json2csv": "^6.0.0-alpha.2",
     "mysql2": "^3.14.0",
-    "pdfmake": "^0.2.18"
+    "pdfmake": "^0.2.18",
+    "pg": "^8.15.6"
   },
   "repository": {
     "type": "git",

@@ -2,68 +2,93 @@ const db = require("../config/db");
 
 class VendedorModel {
   static async listarTodos() {
-    const [rows] = await db.query("CALL sp_lisven()");
-    return rows[0];
+    try {
+      const { rows } = await db.query("SELECT * FROM sp_lisven()");
+      return rows;
+    } catch (error) {
+      console.error("Error en listarTodos:", error);
+      return [];
+    }
   }
 
   static async buscarPor(busqueda, tipo) {
-    let rows;
     try {
+      let result;
       switch (tipo) {
         case "id":
-          [rows] = await db.query("CALL sp_busven(?)", [busqueda]);
+          result = await db.query("SELECT * FROM sp_busven($1)", [busqueda]);
           break;
         case "nombre":
         case "apellido":
-          [rows] = await db.query("CALL sp_searchven(?)", [busqueda]);
+          result = await db.query("SELECT * FROM sp_searchven($1)", [busqueda]);
           break;
         default:
-          [rows] = await db.query("CALL sp_lisven()");
+          result = await db.query("SELECT * FROM sp_lisven()");
       }
-      return rows[0] || []; // Aseguramos que siempre devuelva al menos un array vacío
+      return result.rows || [];
     } catch (error) {
       console.error("Error en buscarPor:", error);
-      return []; // Devolvemos un array vacío en caso de error
+      return [];
     }
   }
 
   static async listarDistritos() {
-    const [rows] = await db.query("CALL sp_lisdistritos()");
-    return rows[0];
+    try {
+      const { rows } = await db.query("SELECT * FROM sp_lisdistritos()");
+      return rows;
+    } catch (error) {
+      console.error("Error en listarDistritos:", error);
+      return [];
+    }
   }
 
   static async buscarPorId(id) {
     try {
-      const [rows] = await db.query("CALL sp_busven(?)", [id]);
-      return rows[0] || []; // Aseguramos que siempre devuelva al menos un array vacío
+      const { rows } = await db.query("SELECT * FROM sp_busven($1)", [id]);
+      return rows[0] || null;
     } catch (error) {
       console.error("Error en buscarPorId:", error);
-      return []; // Devolvemos un array vacío en caso de error
+      return null;
     }
   }
 
   static async crear(nom_ven, ape_ven, cel_ven, id_distrito) {
-    const [result] = await db.query("CALL sp_ingven(?, ?, ?, ?)", [
-      nom_ven,
-      ape_ven,
-      cel_ven,
-      id_distrito,
-    ]);
-    return result[0];
+    try {
+      const { rows } = await db.query(
+        "SELECT * FROM sp_ingven($1, $2, $3, $4)",
+        [nom_ven, ape_ven, cel_ven, id_distrito]
+      );
+      return rows[0];
+    } catch (error) {
+      console.error("Error en crear:", error);
+      throw error;
+    }
   }
 
   static async actualizar(id_ven, nom_ven, ape_ven, cel_ven, id_distrito) {
-    return await db.query("CALL sp_modven(?, ?, ?, ?, ?)", [
-      id_ven,
-      nom_ven,
-      ape_ven,
-      cel_ven,
-      id_distrito,
-    ]);
+    try {
+      await db.query("SELECT sp_modven($1, $2, $3, $4, $5)", [
+        id_ven,
+        nom_ven,
+        ape_ven,
+        cel_ven,
+        id_distrito,
+      ]);
+      return true;
+    } catch (error) {
+      console.error("Error en actualizar:", error);
+      throw error;
+    }
   }
 
   static async eliminar(id_ven) {
-    return await db.query("CALL sp_delven(?)", [id_ven]);
+    try {
+      await db.query("SELECT sp_delven($1)", [id_ven]);
+      return true;
+    } catch (error) {
+      console.error("Error en eliminar:", error);
+      throw error;
+    }
   }
 }
 
