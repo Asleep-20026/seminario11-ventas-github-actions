@@ -2,33 +2,7 @@ const VendedorModel = require("../models/vendedor.model");
 const path = require("path");
 
 class VendedorController {
-  static async listar(req, res) {
-    const { busqueda, tipo } = req.query;
-    try {
-      let vendedores;
-      if (busqueda && tipo) {
-        vendedores = await VendedorModel.buscarPor(busqueda, tipo);
-      } else {
-        vendedores = await VendedorModel.listarTodos();
-      }
-      const distritos = await VendedorModel.listarDistritos();
-      res.render("index", {
-        vendedores,
-        distritos,
-        busqueda: busqueda || "",
-        tipo: tipo || "todos",
-      });
-    } catch (error) {
-      console.error("Error al listar vendedores:", error);
-      res.status(500).render("index", {
-        vendedores: [],
-        distritos: [],
-        error: `Error al recuperar vendedores: ${error.message}`,
-        busqueda: busqueda || "",
-        tipo: tipo || "todos",
-      });
-    }
-  }
+
 
   static async mostrarFormularioNuevo(req, res) {
     try {
