@@ -1,0 +1,23 @@
+services:
+  app:
+    image: myapp:latest
+    ports:
+      - "8080:80"
+    environment:
+      - DB_HOST
+      - DB_USER
+      - DB_PASSWORD
+      - DB_DATABASE
+      - DB_PORT
+      - DB_MAX
+      - DB_IDLE_TIMEOUT
+      - DB_SSL_REJECT_UNAUTHORIZED
+      - NODE_ENV
+    volumes:
+      - ./app:/usr/src/app
+    networks:
+      - dev-network
+
+networks:
+  dev-network:
+    external: true

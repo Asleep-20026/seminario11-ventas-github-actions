@@ -1,18 +1,21 @@
 const { Pool } = require('pg');
 
+require('dotenv').config();
+
 const pool = new Pool({
-  host: "dpg-cvnl0ni4d50c73cv2l3g-a.oregon-postgres.render.com",
-  user: "asleep2049",
-  password: "cV4RQZcQNOVArokkeJMCPg9bEaTd22Gj",
-  database: "sistema_ventas",
-  port: 5432,
-  max: 10,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE,
+  port: process.env.DB_PORT,
+  max: process.env.DB_MAX,
+  idleTimeoutMillis: process.env.DB_IDLE_TIMEOUT,
+  connectionTimeoutMillis: process.env.DB_CONNECTION_TIMEOUT,
   ssl: {
-    rejectUnauthorized: false,
+    rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED === 'true',
   },
 });
+
 
 async function testConnection() {
   try {
