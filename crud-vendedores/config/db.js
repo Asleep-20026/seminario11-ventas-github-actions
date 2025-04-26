@@ -16,7 +16,6 @@ const pool = new Pool({
   },
 });
 
-
 async function testConnection() {
   try {
     const client = await pool.connect();
