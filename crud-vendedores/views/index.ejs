@@ -263,40 +263,45 @@
                 </div>
             <% } %>
 
-            <!-- Paginación -->
-            <% if (locals.vendedores && vendedores.length > 0 && locals.totalPaginas > 1) { %>
-                <div class="card-footer">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                    <small class="text-muted">Mostrando <%= vendedores.length %> de <%= totalRegistros %> vendedores</small>
-                    </div>
-                    <nav aria-label="Navegación de páginas">
-                    <ul class="pagination mb-0">
-                        <!-- Botón Anterior -->
-                        <li class="page-item <%= !hayAnterior ? 'disabled' : '' %>">
-                        <a class="page-link" href="/vendedores?pagina=<%= paginaActual - 1 %><%= busqueda ? '&busqueda=' + busqueda : '' %><%= tipo !== 'todos' ? '&tipo=' + tipo : '' %>" aria-label="Anterior">
-                            <span aria-hidden="true">&laquo;</span>
-                        </a>
-                        </li>
-                        
-                        <!-- Números de página -->
-                        <% paginas.forEach(function(pagina) { %>
-                        <li class="page-item <%= pagina === paginaActual ? 'active' : '' %>">
-                            <a class="page-link" href="/vendedores?pagina=<%= pagina %><%= busqueda ? '&busqueda=' + busqueda : '' %><%= tipo !== 'todos' ? '&tipo=' + tipo : '' %>">
-                            <%= pagina %>
-                            </a>
-                        </li>
-                        <% }); %>
-                        
-                        <!-- Botón Siguiente -->
-                        <li class="page-item <%= !haySiguiente ? 'disabled' : '' %>">
-                        <a class="page-link" href="/vendedores?pagina=<%= paginaActual + 1 %><%= busqueda ? '&busqueda=' + busqueda : '' %><%= tipo !== 'todos' ? '&tipo=' + tipo : '' %>" aria-label="Siguiente">
-                            <span aria-hidden="true">&raquo;</span>
-                        </a>
-                        </li>
-                    </ul>
-                    </nav>
+            <!-- Paginación - Reemplaza la sección actual por esta -->
+            <% if (locals.vendedores && vendedores.length > 0) { %>
+                <div class="card-footer text-muted">
+                    Mostrando <%= vendedores.length %> de <%= totalRegistros %> vendedores
                 </div>
+                
+                <!-- Paginación siempre visible mientras haya registros -->
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">Página <%= paginaActual %> de <%= totalPaginas %></small>
+                        </div>
+                        <nav aria-label="Navegación de páginas">
+                            <ul class="pagination mb-0">
+                                <!-- Botón Anterior -->
+                                <li class="page-item <%= !hayAnterior ? 'disabled' : '' %>">
+                                    <a class="page-link" href="/vendedores?pagina=<%= paginaActual - 1 %><%= busqueda ? '&busqueda=' + busqueda : '' %><%= tipo !== 'todos' ? '&tipo=' + tipo : '' %>" aria-label="Anterior">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                
+                                <!-- Números de página -->
+                                <% paginas.forEach(function(pagina) { %>
+                                    <li class="page-item <%= pagina === paginaActual ? 'active' : '' %>">
+                                        <a class="page-link" href="/vendedores?pagina=<%= pagina %><%= busqueda ? '&busqueda=' + busqueda : '' %><%= tipo !== 'todos' ? '&tipo=' + tipo : '' %>">
+                                            <%= pagina %>
+                                        </a>
+                                    </li>
+                                <% }); %>
+                                
+                                <!-- Botón Siguiente -->
+                                <li class="page-item <%= !haySiguiente ? 'disabled' : '' %>">
+                                    <a class="page-link" href="/vendedores?pagina=<%= paginaActual + 1 %><%= busqueda ? '&busqueda=' + busqueda : '' %><%= tipo !== 'todos' ? '&tipo=' + tipo : '' %>" aria-label="Siguiente">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
                 </div>
             <% } %>
         </div>
