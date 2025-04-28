@@ -300,27 +300,63 @@ class VendedorController {
     }
   }
   static async listar(req, res) {
-    const { busqueda, tipo } = req.query;
     try {
+      const { busqueda, tipo, pagina = 1 } = req.query;
+      const porPagina = 10; // Número de registros por página
+      
       let vendedores = [];
+      let totalRegistros = 0;
+      
+      // Obtener los datos según la búsqueda
       if (busqueda && tipo) {
-        vendedores = await VendedorModel.buscarPor(busqueda, tipo);
+        vendedores = await VendedorModel.buscarPorPaginado(busqueda, tipo, parseInt(pagina), porPagina);
+        totalRegistros = await VendedorModel.contarBusqueda(busqueda, tipo);
       } else {
-        vendedores = await VendedorModel.listarTodos();
+        vendedores = await VendedorModel.listarPaginado(parseInt(pagina), porPagina);
+        totalRegistros = await VendedorModel.contarTodos();
       }
+      
+      // Configuración de la paginación
+      const totalPaginas = Math.ceil(totalRegistros / porPagina);
+      const paginaActual = parseInt(pagina);
+      
+      // Generar arreglo de páginas para el paginador (mostrando 5 páginas como máximo)
+      let paginas = [];
+      const mostrarPaginas = 5;
+      let inicio = Math.max(1, paginaActual - Math.floor(mostrarPaginas / 2));
+      let fin = Math.min(totalPaginas, inicio + mostrarPaginas - 1);
+      
+      // Ajustar el inicio si estamos cerca del final
+      if (fin - inicio + 1 < mostrarPaginas) {
+        inicio = Math.max(1, fin - mostrarPaginas + 1);
+      }
+      
+      // Crear array con los números de página a mostrar
+      for (let i = inicio; i <= fin; i++) {
+        paginas.push(i);
+      }
+      
+      const hayAnterior = paginaActual > 1;
+      const haySiguiente = paginaActual < totalPaginas;
+      
       const distritos = await VendedorModel.listarDistritos();
-
-      // Renderizamos la vista sin mostrar mensaje de error incluso cuando no hay vendedores
+  
+      // Renderizamos la vista con los datos de paginación
       res.render("index", {
         vendedores,
         distritos,
         busqueda: busqueda || "",
         tipo: tipo || "todos",
-        // No pasamos un mensaje de error
+        paginaActual,
+        totalPaginas,
+        paginas,
+        hayAnterior,
+        haySiguiente,
+        totalRegistros
       });
     } catch (error) {
       console.error("Error al listar vendedores:", error);
-
+  
       // Incluso con error, evitamos mostrar el mensaje en la interfaz
       const distritos = await VendedorModel.listarDistritos().catch(() => []);
       res.status(500).render("index", {
@@ -328,7 +364,12 @@ class VendedorController {
         distritos,
         busqueda: busqueda || "",
         tipo: tipo || "todos",
-        // No pasamos mensaje de error visible
+        paginaActual: 1,
+        totalPaginas: 0,
+        paginas: [],
+        hayAnterior: false,
+        haySiguiente: false,
+        totalRegistros: 0
       });
     }
   }
