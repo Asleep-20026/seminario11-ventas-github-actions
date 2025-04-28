@@ -1,8 +1,11 @@
 services:
-  app:
-    image: myapp:latest
+  app-sistemas-ventas:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: app-sistemas-ventas:latest
     ports:
-      - "8080:80"
+      - "3000:3000"
     environment:
       - DB_HOST
       - DB_USER
@@ -13,10 +16,11 @@ services:
       - DB_IDLE_TIMEOUT
       - DB_SSL_REJECT_UNAUTHORIZED
       - NODE_ENV
-    volumes:
-      - ./app:/usr/src/app
     networks:
       - dev-network
+    command: sh -c "npm run start"
+    expose:
+      - 3000
 
 networks:
   dev-network:
