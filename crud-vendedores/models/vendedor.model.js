@@ -91,81 +91,170 @@ class VendedorModel {
     }
   }
 
-  static async listarPaginado(pagina = 1, porPagina = 1) {
+  // Añadir las funciones de paginación que faltan
+  static async listarPaginado(pagina, porPagina) {
     try {
-      // Get all records first
-      const { rows } = await db.query("SELECT * FROM sp_lisven()");
+      // Calculamos el offset basado en la página y elementos por página
+      const offset = (pagina - 1) * porPagina;
       
-      // Apply pagination
-      const inicio = (pagina - 1) * porPagina;
-      const fin = inicio + porPagina;  // This will ensure we get exactly porPagina items
+      // IMPORTANTE: Usamos una consulta directa en lugar de llamar a sp_lisven()
+      // para evitar el error de tipo de datos
+      const query = `
+        SELECT 
+          v.id_ven,
+          v.nom_ven,
+          v.ape_ven,
+          v.cel_ven::varchar, -- Convertimos explícitamente a varchar para evitar problemas de tipo
+          COALESCE(d.nombre, 'Sin distrito') as distrito
+        FROM Vendedor v
+        LEFT JOIN Distrito d ON v.id_distrito = d.id_distrito
+        ORDER BY v.id_ven
+        LIMIT $1 OFFSET $2
+      `;
       
-      return rows.slice(inicio, fin);
+      const { rows } = await db.query(query, [porPagina, offset]);
+      return rows;
     } catch (error) {
       console.error("Error en listarPaginado:", error);
-      return [];
+      throw error;
     }
   }
-  
+
   static async contarTodos() {
     try {
-      const { rows } = await db.query("SELECT * FROM sp_lisven()");
-      return rows.length;
+      // Usamos una consulta directa en lugar de un procedimiento almacenado
+      const query = "SELECT COUNT(*) FROM Vendedor";
+      const { rows } = await db.query(query);
+      return parseInt(rows[0].count);
     } catch (error) {
       console.error("Error en contarTodos:", error);
-      return 0;
+      throw error;
     }
   }
-  
-  static async buscarPorPaginado(busqueda, tipo, pagina = 1, porPagina = 1) {
+
+  static async buscarPorPaginado(busqueda, tipo, pagina, porPagina) {
     try {
-      let result;
+      const offset = (pagina - 1) * porPagina;
+      let query;
+      let params;
+
       switch (tipo) {
         case "id":
-          result = await db.query("SELECT * FROM sp_busven($1)", [busqueda]);
+          query = `
+            SELECT 
+              v.id_ven,
+              v.nom_ven,
+              v.ape_ven,
+              v.cel_ven::varchar, -- Convertimos a varchar
+              COALESCE(d.nombre, 'Sin distrito') as distrito
+            FROM Vendedor v
+            LEFT JOIN Distrito d ON v.id_distrito = d.id_distrito
+            WHERE v.id_ven = $1
+            ORDER BY v.id_ven
+            LIMIT $2 OFFSET $3
+          `;
+          params = [busqueda, porPagina, offset];
           break;
         case "nombre":
+          query = `
+            SELECT 
+              v.id_ven,
+              v.nom_ven,
+              v.ape_ven,
+              v.cel_ven::varchar, -- Convertimos a varchar
+              COALESCE(d.nombre, 'Sin distrito') as distrito
+            FROM Vendedor v
+            LEFT JOIN Distrito d ON v.id_distrito = d.id_distrito
+            WHERE v.nom_ven ILIKE $1
+            ORDER BY v.id_ven
+            LIMIT $2 OFFSET $3
+          `;
+          params = [`%${busqueda}%`, porPagina, offset];
+          break;
         case "apellido":
-          result = await db.query("SELECT * FROM sp_searchven($1)", [busqueda]);
+          query = `
+            SELECT 
+              v.id_ven,
+              v.nom_ven,
+              v.ape_ven,
+              v.cel_ven::varchar, -- Convertimos a varchar
+              COALESCE(d.nombre, 'Sin distrito') as distrito
+            FROM Vendedor v
+            LEFT JOIN Distrito d ON v.id_distrito = d.id_distrito
+            WHERE v.ape_ven ILIKE $1
+            ORDER BY v.id_ven
+            LIMIT $2 OFFSET $3
+          `;
+          params = [`%${busqueda}%`, porPagina, offset];
           break;
         default:
-          result = await db.query("SELECT * FROM sp_lisven()");
+          // Búsqueda en todos los campos
+          query = `
+            SELECT 
+              v.id_ven,
+              v.nom_ven,
+              v.ape_ven,
+              v.cel_ven::varchar, -- Convertimos a varchar
+              COALESCE(d.nombre, 'Sin distrito') as distrito
+            FROM Vendedor v
+            LEFT JOIN Distrito d ON v.id_distrito = d.id_distrito
+            WHERE 
+              v.id_ven::text ILIKE $1 OR
+              v.nom_ven ILIKE $1 OR
+              v.ape_ven ILIKE $1 OR
+              v.cel_ven ILIKE $1
+            ORDER BY v.id_ven
+            LIMIT $2 OFFSET $3
+          `;
+          params = [`%${busqueda}%`, porPagina, offset];
       }
-      
-      // Ensure paging works correctly
-      const rows = result.rows || [];
-      const inicio = (pagina - 1) * porPagina;
-      const fin = inicio + porPagina;
-      
-      // Return exactly porPagina items (or less if at the end)
-      return rows.slice(inicio, fin);
+
+      const { rows } = await db.query(query, params);
+      return rows;
     } catch (error) {
       console.error("Error en buscarPorPaginado:", error);
       return [];
     }
   }
-  
+
   static async contarBusqueda(busqueda, tipo) {
     try {
-      let result;
+      let query;
+      let params;
+
       switch (tipo) {
         case "id":
-          result = await db.query("SELECT * FROM sp_busven($1)", [busqueda]);
+          query = "SELECT COUNT(*) FROM Vendedor WHERE id_ven = $1";
+          params = [busqueda];
           break;
         case "nombre":
+          query = "SELECT COUNT(*) FROM Vendedor WHERE nom_ven ILIKE $1";
+          params = [`%${busqueda}%`];
+          break;
         case "apellido":
-          result = await db.query("SELECT * FROM sp_searchven($1)", [busqueda]);
+          query = "SELECT COUNT(*) FROM Vendedor WHERE ape_ven ILIKE $1";
+          params = [`%${busqueda}%`];
           break;
         default:
-          result = await db.query("SELECT * FROM sp_lisven()");
+          // Búsqueda en todos los campos
+          query = `
+            SELECT COUNT(*) FROM Vendedor 
+            WHERE 
+              id_ven::text ILIKE $1 OR
+              nom_ven ILIKE $1 OR
+              ape_ven ILIKE $1 OR
+              cel_ven ILIKE $1
+          `;
+          params = [`%${busqueda}%`];
       }
-      return (result.rows || []).length;
+
+      const { rows } = await db.query(query, params);
+      return parseInt(rows[0].count);
     } catch (error) {
       console.error("Error en contarBusqueda:", error);
       return 0;
     }
   }
-  
 }
 
 module.exports = VendedorModel;
