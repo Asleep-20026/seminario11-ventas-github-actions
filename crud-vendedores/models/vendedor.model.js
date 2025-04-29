@@ -44,24 +44,24 @@ class VendedorModel {
 
   static async buscarPorId(id) {
     try {
-      const { rows } = await db.query("SELECT * FROM sp_busven($1)", [id]);
-      return rows[0] || null;
+        const { rows } = await db.query("SELECT * FROM sp_busven($1)", [id]);
+        return rows[0] || null;
     } catch (error) {
-      console.error("Error en buscarPorId:", error);
-      return null;
+        console.error("Error en buscarPorId:", error);
+        return null;
     }
-  }
+}
 
   static async crear(nom_ven, ape_ven, cel_ven, id_distrito) {
     try {
-      const { rows } = await db.query(
-        "SELECT * FROM sp_ingven($1, $2, $3, $4)",
-        [nom_ven, ape_ven, cel_ven, id_distrito]
-      );
-      return rows[0];
+        const { rows } = await db.query(
+            "SELECT * FROM sp_ingven($1, $2, $3, $4)",
+            [nom_ven, ape_ven, String(cel_ven).trim(), id_distrito]
+        );
+        return rows[0];
     } catch (error) {
-      console.error("Error en crear:", error);
-      throw error;
+        console.error("Error al crear vendedor:", error);
+        throw new Error(`Error al crear vendedor: ${error.message}`);
     }
   }
 
@@ -91,38 +91,33 @@ class VendedorModel {
     }
   }
 
-  // Añadir las funciones de paginación que faltan
+  // Métodos de paginación sin cambios
   static async listarPaginado(pagina, porPagina) {
     try {
-      // Calculamos el offset basado en la página y elementos por página
-      const offset = (pagina - 1) * porPagina;
-      
-      // IMPORTANTE: Usamos una consulta directa en lugar de llamar a sp_lisven()
-      // para evitar el error de tipo de datos
-      const query = `
-        SELECT 
-          v.id_ven,
-          v.nom_ven,
-          v.ape_ven,
-          v.cel_ven::varchar, -- Convertimos explícitamente a varchar para evitar problemas de tipo
-          COALESCE(d.nombre, 'Sin distrito') as distrito
-        FROM Vendedor v
-        LEFT JOIN Distrito d ON v.id_distrito = d.id_distrito
-        ORDER BY v.id_ven
-        LIMIT $1 OFFSET $2
-      `;
-      
-      const { rows } = await db.query(query, [porPagina, offset]);
-      return rows;
+        const offset = (pagina - 1) * porPagina;
+        const query = `
+            SELECT 
+                v.id_ven,
+                v.nom_ven,
+                v.ape_ven,
+                v.cel_ven,
+                v.id_distrito,
+                COALESCE(d.nombre, 'Sin distrito') as distrito
+            FROM Vendedor v
+            LEFT JOIN Distrito d ON v.id_distrito = d.id_distrito
+            ORDER BY v.id_ven
+            LIMIT $1 OFFSET $2
+        `;
+        const { rows } = await db.query(query, [porPagina, offset]);
+        return rows;
     } catch (error) {
-      console.error("Error en listarPaginado:", error);
-      throw error;
+        console.error("Error en listarPaginado:", error);
+        throw error;
     }
-  }
+}
 
   static async contarTodos() {
     try {
-      // Usamos una consulta directa en lugar de un procedimiento almacenado
       const query = "SELECT COUNT(*) FROM Vendedor";
       const { rows } = await db.query(query);
       return parseInt(rows[0].count);
@@ -145,7 +140,7 @@ class VendedorModel {
               v.id_ven,
               v.nom_ven,
               v.ape_ven,
-              v.cel_ven::varchar, -- Convertimos a varchar
+              v.cel_ven::varchar,
               COALESCE(d.nombre, 'Sin distrito') as distrito
             FROM Vendedor v
             LEFT JOIN Distrito d ON v.id_distrito = d.id_distrito
@@ -161,7 +156,7 @@ class VendedorModel {
               v.id_ven,
               v.nom_ven,
               v.ape_ven,
-              v.cel_ven::varchar, -- Convertimos a varchar
+              v.cel_ven::varchar,
               COALESCE(d.nombre, 'Sin distrito') as distrito
             FROM Vendedor v
             LEFT JOIN Distrito d ON v.id_distrito = d.id_distrito
@@ -177,7 +172,7 @@ class VendedorModel {
               v.id_ven,
               v.nom_ven,
               v.ape_ven,
-              v.cel_ven::varchar, -- Convertimos a varchar
+              v.cel_ven::varchar,
               COALESCE(d.nombre, 'Sin distrito') as distrito
             FROM Vendedor v
             LEFT JOIN Distrito d ON v.id_distrito = d.id_distrito
@@ -188,13 +183,12 @@ class VendedorModel {
           params = [`%${busqueda}%`, porPagina, offset];
           break;
         default:
-          // Búsqueda en todos los campos
           query = `
             SELECT 
               v.id_ven,
               v.nom_ven,
               v.ape_ven,
-              v.cel_ven::varchar, -- Convertimos a varchar
+              v.cel_ven::varchar,
               COALESCE(d.nombre, 'Sin distrito') as distrito
             FROM Vendedor v
             LEFT JOIN Distrito d ON v.id_distrito = d.id_distrito
@@ -236,7 +230,6 @@ class VendedorModel {
           params = [`%${busqueda}%`];
           break;
         default:
-          // Búsqueda en todos los campos
           query = `
             SELECT COUNT(*) FROM Vendedor 
             WHERE 

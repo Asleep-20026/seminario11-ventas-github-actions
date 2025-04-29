@@ -2,8 +2,6 @@ const VendedorModel = require("../models/vendedor.model");
 const path = require("path");
 
 class VendedorController {
-
-
   static async mostrarFormularioNuevo(req, res) {
     try {
       const distritos = await VendedorModel.listarDistritos();
@@ -30,28 +28,42 @@ class VendedorController {
 
   static async mostrarFormularioEditar(req, res) {
     try {
-        console.log("Buscando vendedor con ID:", req.params.id);
-        const vendedor = await VendedorModel.buscarPorId(req.params.id);
-        console.log("Resultado de la búsqueda:", vendedor);
-        
-        if (!vendedor || !vendedor.id_ven) {
-            console.error("Vendedor no encontrado para ID:", req.params.id);
-            return res.status(404).send("Vendedor no encontrado");
-        }
-        
-        // Pasar el objeto vendedor directamente, sin intentar acceder a [0]
-        const distritos = await VendedorModel.listarDistritos();
-        res.render("editar", { vendedor, distritos });
+      console.log("Buscando vendedor con ID:", req.params.id);
+      const vendedor = await VendedorModel.buscarPorId(req.params.id);
+      console.log("Resultado de la búsqueda:", vendedor);
+      
+      if (!vendedor) {
+        console.error("Vendedor no encontrado para ID:", req.params.id);
+        return res.status(404).send("Vendedor no encontrado");
+      }
+      
+      // Verificar si el vendedor tiene un id_ven
+      if (!vendedor.id_ven) {
+        console.error("Vendedor encontrado pero sin ID para:", req.params.id);
+        return res.status(404).send("Datos de vendedor incompletos");
+      }
+      
+      const distritos = await VendedorModel.listarDistritos();
+      res.render("editar", { vendedor, distritos });
     } catch (error) {
-        console.error("Error al buscar vendedor:", error);
-        res.status(500).send("Error al recuperar vendedor");
+      console.error("Error al buscar vendedor:", error);
+      res.status(500).send("Error al recuperar vendedor");
     }
-}
+  }
 
   static async actualizar(req, res) {
     const { nom_ven, ape_ven, cel_ven, id_distrito } = req.body;
     const id_ven = req.params.id;
     try {
+      // Verificar primero si el vendedor existe
+      const vendedor = await VendedorModel.buscarPorId(id_ven);
+      if (!vendedor) {
+        return res.status(404).json({
+          success: false,
+          message: "El vendedor especificado no existe",
+        });
+      }
+
       await VendedorModel.actualizar(
         id_ven,
         nom_ven,
@@ -74,7 +86,7 @@ class VendedorController {
       const id = req.params.id;
       // Verificar primero si el vendedor existe
       const vendedor = await VendedorModel.buscarPorId(id);
-      if (!vendedor || vendedor.length === 0) {
+      if (!vendedor) {
         return res.status(404).json({
           success: false,
           message: "El vendedor especificado no existe",
@@ -122,18 +134,6 @@ class VendedorController {
           bolditalics: "Helvetica-BoldOblique",
         },
       };
-
-      // Si tienes problemas con las fuentes, descomenta estas líneas y comenta las anteriores
-      /*
-      const fonts = {
-        Roboto: {
-          normal: path.join(__dirname, '../node_modules/pdfmake/fonts/Roboto/Roboto-Regular.ttf'),
-          bold: path.join(__dirname, '../node_modules/pdfmake/fonts/Roboto/Roboto-Medium.ttf'),
-          italics: path.join(__dirname, '../node_modules/pdfmake/fonts/Roboto/Roboto-Italic.ttf'),
-          bolditalics: path.join(__dirname, '../node_modules/pdfmake/fonts/Roboto/Roboto-MediumItalic.ttf')
-        }
-      };
-      */
 
       // 4. Crear instancia de PdfPrinter
       const printer = new PdfPrinter(fonts);
@@ -228,7 +228,6 @@ class VendedorController {
     }
   }
 
-  // Método alternativo que genera HTML en lugar de PDF, útil en caso de problemas con pdfmake
   static async exportarHTML(req, res) {
     try {
       const vendedores = await VendedorModel.listarTodos();
@@ -299,6 +298,7 @@ class VendedorController {
         );
     }
   }
+  
   static async listar(req, res) {
     try {
       // Asegúrate de que pagina sea un número y tenga un valor predeterminado
