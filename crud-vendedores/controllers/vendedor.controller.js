@@ -346,13 +346,11 @@ class VendedorController {
         paginas.push(i);
       }
       
-      // Determinar si hay páginas anteriores o siguientes
       const hayAnterior = pagina > 1;
       const haySiguiente = pagina < totalPaginas;
       
       const distritos = await VendedorModel.listarDistritos();
       
-      // Asegúrate de que totalPaginas sea siempre al menos 1 para evitar errores
       const calculatedTotalPaginas = Math.max(1, totalPaginas);
       
       console.log("Renderizando con:", {
